@@ -11,11 +11,15 @@ float fCono(float y);
 void conoAlambre(int N);
 void formaAlambre(float H, int N, float(*f)(float y));
 void Key(unsigned char tecla, int x, int y);
+void specialKey(int key, int x, int y);
 void display(void);
 void inicializaVista(void);
 void reshape(int width, int height);
 void inicializaVentana(int argc, char **argv);
 void iniciaOpenGL(int argc, char **argv);
+
+float anguloRotacionX = 15.0f; // Ángulo de rotación alrededor del eje X
+float anguloRotacionY = 0.0f;  // Ángulo de rotación alrededor del eje Y
 
 /*-------------------------------------------------------------------------- 
 Devuelve el valor de x del punto que gira.
@@ -30,7 +34,7 @@ float dameX(float R, int N, int n)
 }
 
 /*Devuelve el valor de z del punto que gira.*/
-float dameZ(float R, int N, int n) 
+	float dameZ(float R, int N, int n) 
 {
 	float z = (float)R * sin(n * (2 * M_PI) / N);
 	return z;
@@ -104,12 +108,18 @@ void display(void)
 {
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glColor3f(1.0f, 0.0f, 0.0f);
+	glColor3f(0, 0, 1);
 	glLoadIdentity();
 	glPushMatrix();
-	glTranslatef(0.0f, 0.0f, -4.0f);
-	glRotatef(15.0f, 1.0f, 0.0f, 0.0f);
-	conoAlambre(20);  // Cambia de cilindro a cono
+	
+	// Mueve la cámara más lejos para ver el cono completo
+	glTranslatef(0.0f, 0.0f, -200.0f);  // Aleja la cámara aún más
+	
+	// Aplica las rotaciones interactivas
+	glRotatef(anguloRotacionX, 1.0f, 0.0f, 0.0f);  // Rotación sobre el eje X
+	glRotatef(anguloRotacionY, 0.0f, 1.0f, 0.0f);  // Rotación sobre el eje Y
+	
+	conoAlambre(30);  // Dibuja el cono con más divisiones
 	glPopMatrix();
 	glFlush();
 }
@@ -118,7 +128,7 @@ void inicializaVista(void)
 {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f);
+	gluPerspective(45.0f, 1.0f, 1.0f, 500.0f); // 45 grados de campo de visión, aspecto 1:1, rango de visión de 1.0 a 500 unidades
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -133,8 +143,39 @@ void reshape(int width, int height)
 	inicializaVista();
 }
 
+/* Maneja las teclas comunes */
+void Key(unsigned char tecla, int x, int y) 
+{
+	if (tecla == 27) { // Tecla ESC para salir
+		exit(0);
+	}
+}
+
+/* Maneja las teclas especiales para la rotación */
+void specialKey(int key, int x, int y)
+{
+	switch (key)
+	{
+	case GLUT_KEY_UP:   // Flecha arriba: rotar hacia arriba
+		anguloRotacionX += 5.0f;
+		break;
+	case GLUT_KEY_DOWN: // Flecha abajo: rotar hacia abajo
+		anguloRotacionX -= 5.0f;
+		break;
+	case GLUT_KEY_LEFT: // Flecha izquierda: rotar hacia la izquierda
+		anguloRotacionY -= 5.0f;
+		break;
+	case GLUT_KEY_RIGHT: // Flecha derecha: rotar hacia la derecha
+		anguloRotacionY += 5.0f;
+		break;
+	default:
+		break;
+	}
+	glutPostRedisplay();
+}
+
 /*Crea la ventana para dibujar con OpenGL.*/
-void inicializaVentana(int argc, char **argv) 
+	void inicializaVentana(int argc, char **argv) 
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
@@ -143,6 +184,8 @@ void inicializaVentana(int argc, char **argv)
 	glutCreateWindow(argv[0]);
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
+	glutKeyboardFunc(Key);
+	glutSpecialFunc(specialKey);
 }
 
 void iniciaOpenGL(int argc, char **argv) 
@@ -157,3 +200,4 @@ int main(int argc, char** argv)
 	iniciaOpenGL(argc, argv);
 	return 1;
 }
+
